@@ -1,7 +1,7 @@
 import pytest
 
 from minirag.chunking import chunk_text, split_sentences
-from minirag.text import tokenize
+from minirag.text import stem, tokenize
 
 
 def test_tokenize_lowercases_and_drops_stopwords():
@@ -52,3 +52,23 @@ def test_long_sentence_is_split():
 def test_invalid_parameters(max_words, overlap):
     with pytest.raises(ValueError):
         chunk_text("text", "d", max_words=max_words, overlap_words=overlap)
+
+
+@pytest.mark.parametrize(
+    "a,b",
+    [
+        ("containers", "container"),
+        ("scheduled", "schedule"),
+        ("images", "image"),
+        ("queries", "query"),
+        ("running", "run"),
+        ("boxes", "box"),
+    ],
+)
+def test_stem_maps_inflections_together(a, b):
+    assert stem(a) == stem(b)
+
+
+@pytest.mark.parametrize("word", ["class", "status", "is", "bed", "2026"])
+def test_stem_leaves_short_and_invariant_words(word):
+    assert stem(word) == word
