@@ -140,3 +140,43 @@ class VectorRetriever:
             return []
         q = self.embedder.embed([query])[0]
         return _top_k(self._matrix @ q, self._chunks, k)
+
+
+class HybridRetriever:
+    """Combine several retrievers with Reciprocal Rank Fusion (RRF).
+
+    RRF scores each chunk as ``sum(weight / (rrf_k + rank))`` over the
+    retrievers that returned it. It needs no score calibration, which makes it
+    a robust way to merge BM25 and vector results whose scores live on
+    different scales.
+    """
+
+    def __init__(
+        self,
+        retrievers: Sequence[Retriever],
+        weights: Sequence[float] | None = None,
+        rrf_k: int = 60,
+        candidates: int = 20,
+    ) -> None:
+        if not retrievers:
+            raise ValueError("HybridRetriever needs at least one retriever")
+        if weights is not None and len(weights) != len(retrievers):
+            raise ValueError("weights must match retrievers")
+        self.retrievers = list(retrievers)
+        self.weights = list(weights) if weights is not None else [1.0] * len(retrievers)
+        self.rrf_k = rrf_k
+        self.candidates = candidates
+
+    def index(self, chunks: Sequence[Chunk]) -> None:
+        for r in self.retrievers:
+            r.index(chunks)
+
+    def search(self, query: str, k: int = 5) -> list[Hit]:
+        fused: dict[str, float] = {}
+        by_id: dict[str, Chunk] = {}
+        for retriever, weight in zip(self.retrievers, self.weights):
+            for rank, hit in enumerate(retriever.search(query, max(k, self.candidates)), start=1):
+                fused[hit.chunk.id] = fused.get(hit.chunk.id, 0.0) + weight / (self.rrf_k + rank)
+                by_id[hit.chunk.id] = hit.chunk
+        ranked = sorted(fused.items(), key=lambda kv: -kv[1])[:k]
+        return [Hit(by_id[cid], score) for cid, score in ranked]
