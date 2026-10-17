@@ -1,0 +1,17 @@
+{"query": "what is the smallest deployable unit in kubernetes", "relevant": ["kubernetes.md"]}
+{"query": "how does the autoscaler change the number of replicas", "relevant": ["kubernetes.md"]}
+{"query": "why do attention models need positional encodings", "relevant": ["transformers.md"]}
+{"query": "caching keys and values during text generation", "relevant": ["transformers.md"]}
+{"query": "combine keyword and embedding search results", "relevant": ["rag.md"]}
+{"query": "metrics to measure retrieval quality", "relevant": ["rag.md"]}
+{"query": "make container images smaller", "relevant": ["docker.md"]}
+{"query": "which linux features isolate containers", "relevant": ["docker.md"]}
+{"query": "what happens if the learning rate is too large", "relevant": ["gradient-descent.md"]}
+{"query": "optimizer with adaptive per-parameter learning rates", "relevant": ["gradient-descent.md"]}
+{"query": "reduce overfitting", "relevant": ["gradient-descent.md"]}
+{"query": "latency when a function runs for the first time", "relevant": ["serverless.md"]}
+{"query": "where should state live for stateless functions", "relevant": ["serverless.md"]}
+{"query": "approximate nearest neighbour graph index", "relevant": ["vector-databases.md"]}
+{"query": "compress embeddings to save memory", "relevant": ["vector-databases.md"]}
+{"query": "gradually shift traffic to a new release", "relevant": ["ci-cd.md"]}
+{"query": "run tests automatically on every pull request", "relevant": ["ci-cd.md"]}
