@@ -16,6 +16,8 @@ dependency, so every step is easy to read and test.
   plug in any object with `embed(texts) -> np.ndarray` to use a real
   embedding model.
 - **Hybrid search** via Reciprocal Rank Fusion, with per-retriever weights.
+- **MMR re-ranking** (`MMRRetriever`) to drop near-duplicate chunks and keep
+  the context diverse; available in the CLI as `--retriever hybrid-mmr`.
 - **Evaluation**: recall@k, MRR and nDCG@k over a labelled JSONL query set.
 - **Save and load** an index (chunks as JSONL plus settings) with
   `RAGPipeline.save` / `RAGPipeline.load` or `minirag index`.

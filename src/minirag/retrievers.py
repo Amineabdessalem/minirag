@@ -180,3 +180,58 @@ class HybridRetriever:
                 by_id[hit.chunk.id] = hit.chunk
         ranked = sorted(fused.items(), key=lambda kv: -kv[1])[:k]
         return [Hit(by_id[cid], score) for cid, score in ranked]
+
+
+class MMRRetriever:
+    """Re-rank another retriever's candidates with Maximal Marginal Relevance.
+
+    MMR picks results one at a time, scoring each candidate as
+    ``lambda_ * sim(query, doc) - (1 - lambda_) * max(sim(doc, selected))``.
+    This trades a little relevance for diversity, so the prompt is not filled
+    with near-duplicate chunks. ``lambda_=1`` reduces to plain relevance order.
+    """
+
+    def __init__(
+        self,
+        base: Retriever,
+        lambda_: float = 0.7,
+        candidates: int = 20,
+        embedder: Embedder | None = None,
+    ) -> None:
+        if not 0.0 <= lambda_ <= 1.0:
+            raise ValueError("lambda_ must be in [0, 1]")
+        self.base = base
+        self.lambda_ = lambda_
+        self.candidates = candidates
+        self.embedder = embedder
+        self._vectors: dict[str, np.ndarray] = {}
+
+    def index(self, chunks: Sequence[Chunk]) -> None:
+        self.base.index(chunks)
+        texts = [c.text for c in chunks]
+        if self.embedder is None:
+            self.embedder = TfidfRetriever().fit(texts)
+        matrix = self.embedder.embed(texts) if texts else np.zeros((0, 0))
+        self._vectors = {c.id: matrix[i] for i, c in enumerate(chunks)}
+
+    def search(self, query: str, k: int = 5) -> list[Hit]:
+        pool = self.base.search(query, max(k, self.candidates))
+        if not pool:
+            return []
+        q = self.embedder.embed([query])[0]
+        vecs = np.stack([self._vectors[h.chunk.id] for h in pool])
+        relevance = vecs @ q
+        similarity = vecs @ vecs.T
+
+        selected: list[int] = []
+        remaining = list(range(len(pool)))
+        while remaining and len(selected) < k:
+            if selected:
+                redundancy = similarity[np.ix_(remaining, selected)].max(axis=1)
+            else:
+                redundancy = np.zeros(len(remaining))
+            scores = self.lambda_ * relevance[remaining] - (1 - self.lambda_) * redundancy
+            best = remaining[int(np.argmax(scores))]
+            selected.append(best)
+            remaining.remove(best)
+        return [Hit(pool[i].chunk, float(relevance[i])) for i in selected]

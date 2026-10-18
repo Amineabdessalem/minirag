@@ -9,12 +9,13 @@ from pathlib import Path
 
 from minirag.evaluation import evaluate
 from minirag.pipeline import RAGPipeline
-from minirag.retrievers import BM25Retriever, HybridRetriever, VectorRetriever
+from minirag.retrievers import BM25Retriever, HybridRetriever, MMRRetriever, VectorRetriever
 
 RETRIEVERS = {
     "bm25": lambda: BM25Retriever(),
     "vector": lambda: VectorRetriever(),
     "hybrid": lambda: HybridRetriever([BM25Retriever(), VectorRetriever()]),
+    "hybrid-mmr": lambda: MMRRetriever(HybridRetriever([BM25Retriever(), VectorRetriever()])),
 }
 
 
@@ -53,7 +54,7 @@ def cmd_eval(args: argparse.Namespace) -> None:
     for name in args.compare or [args.retriever]:
         args.retriever = name
         report = evaluate(_pipeline(args).retriever, labelled, k=args.k)
-        print(f"{name:<7} {report}")
+        print(f"{name:<10} {report}")
 
 
 def build_parser() -> argparse.ArgumentParser:

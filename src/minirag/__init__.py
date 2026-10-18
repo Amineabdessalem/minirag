@@ -2,7 +2,14 @@
 
 from minirag.chunking import Chunk, chunk_text
 from minirag.pipeline import Answer, RAGPipeline
-from minirag.retrievers import BM25Retriever, Hit, HybridRetriever, TfidfRetriever, VectorRetriever
+from minirag.retrievers import (
+    BM25Retriever,
+    Hit,
+    HybridRetriever,
+    MMRRetriever,
+    TfidfRetriever,
+    VectorRetriever,
+)
 
 __all__ = [
     "Answer",
@@ -10,6 +17,7 @@ __all__ = [
     "Chunk",
     "Hit",
     "HybridRetriever",
+    "MMRRetriever",
     "RAGPipeline",
     "TfidfRetriever",
     "VectorRetriever",
