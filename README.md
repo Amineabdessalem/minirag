@@ -17,6 +17,8 @@ dependency, so every step is easy to read and test.
   embedding model.
 - **Hybrid search** via Reciprocal Rank Fusion, with per-retriever weights.
 - **Evaluation**: recall@k, MRR and nDCG@k over a labelled JSONL query set.
+- **Save and load** an index (chunks as JSONL plus settings) with
+  `RAGPipeline.save` / `RAGPipeline.load` or `minirag index`.
 - **Generator-agnostic pipeline**: pass any `prompt -> text` callable (an LLM
   API client, a local model or a test stub).
 
@@ -68,6 +70,10 @@ minirag ask --docs examples/docs "what is the smallest deployable unit in kubern
 
 # Print the full prompt that would be sent to an LLM
 minirag ask --docs examples/docs --prompt "why do transformers need positional encodings"
+
+# Chunk once, save the index, and query it later
+minirag index --docs examples/docs --out .minirag
+minirag ask --index .minirag "how do containers get isolated"
 
 # Compare retrievers on a labelled query set
 minirag eval --docs examples/docs --queries examples/queries.jsonl --compare bm25 vector hybrid -k 3

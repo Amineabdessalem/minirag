@@ -32,3 +32,11 @@ def test_eval_compares_retrievers(capsys):
     lines = capsys.readouterr().out.splitlines()
     assert [line.split()[0] for line in lines] == ["bm25", "hybrid"]
     assert all("queries=17" in line for line in lines)
+
+
+def test_index_then_ask_from_saved_index(tmp_path, capsys):
+    out = tmp_path / "idx"
+    main(["index", "--docs", str(EXAMPLES / "docs"), "--out", str(out)])
+    assert "saved 8 chunks" in capsys.readouterr().out
+    main(["ask", "--index", str(out), "-k", "1", "what is a pod in kubernetes"])
+    assert "kubernetes.md" in capsys.readouterr().out

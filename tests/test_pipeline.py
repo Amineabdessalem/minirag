@@ -60,3 +60,23 @@ def test_add_directory(tmp_path):
     rag = RAGPipeline()
     assert rag.add_directory(tmp_path) == 2
     assert rag.ask("goroutines concurrency").hits[0].chunk.doc_id == "sub/b.md"
+
+
+def test_save_and_load_round_trip(tmp_path):
+    rag = RAGPipeline(max_words=50, overlap_words=5)
+    rag.add_documents(DOCS)
+    rag.save(tmp_path / "index")
+
+    loaded = RAGPipeline.load(tmp_path / "index", retriever=BM25Retriever())
+    assert loaded.chunks == rag.chunks
+    assert (loaded.max_words, loaded.overlap_words) == (50, 5)
+    assert loaded.ask("tcp ordered delivery").hits[0].chunk.doc_id == "net.md"
+
+
+def test_load_rejects_unknown_format(tmp_path):
+    rag = RAGPipeline()
+    rag.add_documents(DOCS)
+    rag.save(tmp_path)
+    (tmp_path / "meta.json").write_text('{"format_version": 99}')
+    with pytest.raises(ValueError, match="unsupported index format"):
+        RAGPipeline.load(tmp_path)

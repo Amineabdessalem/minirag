@@ -2,7 +2,7 @@
 
 Planned work, roughly in order. Each item should land as its own tested commit.
 
-- [ ] Persist and reload an index (`save`/`load` with NumPy `.npz` + JSON metadata)
+- [x] Persist and reload an index (`save`/`load`, chunks as JSONL + JSON metadata)
 - [ ] Markdown-aware chunking that keeps headings as chunk metadata
 - [ ] Maximal Marginal Relevance (MMR) re-ranking for more diverse context
 - [ ] Optional sentence-transformers embedder behind an extra (`pip install minirag[embeddings]`)

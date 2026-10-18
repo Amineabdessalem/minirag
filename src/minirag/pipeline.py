@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+import json
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Callable, Iterable
 
@@ -20,6 +21,8 @@ Question: {question}
 Answer:"""
 
 Generator = Callable[[str], str]
+
+INDEX_FORMAT_VERSION = 1
 
 
 @dataclass
@@ -70,3 +73,48 @@ class RAGPipeline:
         prompt = self.build_prompt(question, hits)
         text = self.generator(prompt) if self.generator else None
         return Answer(question=question, prompt=prompt, hits=hits, text=text)
+
+    def save(self, path: str | Path) -> None:
+        """Write the chunks and chunking settings to ``path`` (a directory).
+
+        Only the chunks are stored; retriever indexes are rebuilt on load,
+        which keeps the format independent of the retriever in use and is fast
+        for the BM25 and TF-IDF retrievers.
+        """
+        out = Path(path)
+        out.mkdir(parents=True, exist_ok=True)
+        meta = {
+            "format_version": INDEX_FORMAT_VERSION,
+            "max_words": self.max_words,
+            "overlap_words": self.overlap_words,
+            "chunks": len(self.chunks),
+        }
+        (out / "meta.json").write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
+        with (out / "chunks.jsonl").open("w", encoding="utf-8") as f:
+            for chunk in self.chunks:
+                f.write(json.dumps(asdict(chunk), ensure_ascii=False) + "\n")
+
+    @classmethod
+    def load(
+        cls,
+        path: str | Path,
+        retriever: Retriever | None = None,
+        generator: Generator | None = None,
+    ) -> "RAGPipeline":
+        """Rebuild a pipeline saved with :meth:`save`."""
+        root = Path(path)
+        meta = json.loads((root / "meta.json").read_text(encoding="utf-8"))
+        if meta.get("format_version") != INDEX_FORMAT_VERSION:
+            raise ValueError(f"unsupported index format: {meta.get('format_version')!r}")
+        with (root / "chunks.jsonl").open(encoding="utf-8") as f:
+            chunks = [Chunk(**json.loads(line)) for line in f if line.strip()]
+        kwargs = {"retriever": retriever} if retriever is not None else {}
+        rag = cls(
+            generator=generator,
+            max_words=meta["max_words"],
+            overlap_words=meta["overlap_words"],
+            chunks=chunks,
+            **kwargs,
+        )
+        rag.retriever.index(rag.chunks)
+        return rag

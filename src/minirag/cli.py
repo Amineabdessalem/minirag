@@ -1,4 +1,4 @@
-"""Command-line interface: ``minirag ask`` and ``minirag eval``."""
+"""Command-line interface: ``minirag index``, ``minirag ask`` and ``minirag eval``."""
 
 from __future__ import annotations
 
@@ -19,6 +19,8 @@ RETRIEVERS = {
 
 
 def _pipeline(args: argparse.Namespace) -> RAGPipeline:
+    if getattr(args, "index", None):
+        return RAGPipeline.load(args.index, retriever=RETRIEVERS[args.retriever]())
     rag = RAGPipeline(retriever=RETRIEVERS[args.retriever](), max_words=args.max_words)
     n = rag.add_directory(args.docs, args.glob)
     if n == 0:
@@ -36,6 +38,12 @@ def cmd_ask(args: argparse.Namespace) -> None:
         print(f"[{i}] {hit.score:.4f}  {hit.chunk.doc_id}\n    {snippet}")
 
 
+def cmd_index(args: argparse.Namespace) -> None:
+    rag = _pipeline(args)
+    rag.save(args.out)
+    print(f"saved {len(rag.chunks)} chunks to {args.out}")
+
+
 def cmd_eval(args: argparse.Namespace) -> None:
     labelled = [
         (row["query"], set(row["relevant"]))
@@ -51,7 +59,9 @@ def cmd_eval(args: argparse.Namespace) -> None:
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="minirag", description=__doc__)
     common = argparse.ArgumentParser(add_help=False)
-    common.add_argument("--docs", required=True, help="directory of documents to index")
+    source = common.add_mutually_exclusive_group(required=True)
+    source.add_argument("--docs", help="directory of documents to index")
+    source.add_argument("--index", help="directory written by `minirag index`")
     common.add_argument("--glob", default="**/*.md", help="file pattern (default: **/*.md)")
     common.add_argument("--retriever", choices=RETRIEVERS, default="hybrid")
     common.add_argument("--max-words", type=int, default=120, help="chunk size in words")
@@ -62,6 +72,10 @@ def build_parser() -> argparse.ArgumentParser:
     ask.add_argument("question")
     ask.add_argument("--prompt", action="store_true", help="print the full LLM prompt")
     ask.set_defaults(func=cmd_ask)
+
+    idx = sub.add_parser("index", parents=[common], help="chunk documents and save the index")
+    idx.add_argument("--out", required=True, help="output directory")
+    idx.set_defaults(func=cmd_index)
 
     ev = sub.add_parser("eval", parents=[common], help="score retrievers on labelled queries")
     ev.add_argument("--queries", required=True, help="JSONL with {query, relevant: [doc_id]}")
