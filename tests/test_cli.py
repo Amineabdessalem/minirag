@@ -40,3 +40,10 @@ def test_index_then_ask_from_saved_index(tmp_path, capsys):
     assert "saved 8 chunks" in capsys.readouterr().out
     main(["ask", "--index", str(out), "-k", "1", "what is a pod in kubernetes"])
     assert "kubernetes.md" in capsys.readouterr().out
+
+
+def test_ask_with_doc_prefix(capsys):
+    main(["ask", "--docs", str(EXAMPLES / "docs"), "--doc-prefix", "docker", "-k", "3", "containers"])
+    out = capsys.readouterr().out
+    doc_lines = [line for line in out.splitlines() if line.startswith("[")]
+    assert doc_lines and all("docker.md" in line for line in doc_lines)

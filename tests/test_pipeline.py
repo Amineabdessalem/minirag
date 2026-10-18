@@ -80,3 +80,31 @@ def test_load_rejects_unknown_format(tmp_path):
     (tmp_path / "meta.json").write_text('{"format_version": 99}')
     with pytest.raises(ValueError, match="unsupported index format"):
         RAGPipeline.load(tmp_path)
+
+
+def test_search_with_doc_prefix_filter():
+    from minirag.pipeline import doc_prefix
+
+    rag = RAGPipeline()
+    rag.add_documents(
+        [
+            ("cloud/k8s.md", "Kubernetes pods run containers on nodes."),
+            ("cloud/docker.md", "Docker builds container images from layers."),
+            ("ml/serving.md", "Model serving runs containers behind an inference API."),
+        ]
+    )
+    unfiltered = {h.chunk.doc_id for h in rag.search("containers", k=3)}
+    assert "ml/serving.md" in unfiltered
+    hits = rag.search("containers", k=3, where=doc_prefix("cloud/"))
+    assert {h.chunk.doc_id for h in hits} == {"cloud/k8s.md", "cloud/docker.md"}
+
+
+def test_metadata_equals_filter():
+    from minirag.pipeline import metadata_equals
+
+    a = Chunk("a", "a", "vector search with hnsw", 0, 0, metadata={"lang": "en"})
+    b = Chunk("b", "b", "vector search with hnsw graphs", 0, 0, metadata={"lang": "fr"})
+    assert metadata_equals(lang="en")(a) and not metadata_equals(lang="en")(b)
+    rag = RAGPipeline(chunks=[a, b])
+    rag.retriever.index(rag.chunks)
+    assert [h.chunk.id for h in rag.search("hnsw", where=metadata_equals(lang="fr"))] == ["b"]

@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 from minirag.evaluation import evaluate
-from minirag.pipeline import RAGPipeline
+from minirag.pipeline import RAGPipeline, doc_prefix
 from minirag.retrievers import BM25Retriever, HybridRetriever, MMRRetriever, VectorRetriever
 
 RETRIEVERS = {
@@ -30,7 +30,8 @@ def _pipeline(args: argparse.Namespace) -> RAGPipeline:
 
 
 def cmd_ask(args: argparse.Namespace) -> None:
-    answer = _pipeline(args).ask(args.question, k=args.k)
+    where = doc_prefix(*args.doc_prefix) if args.doc_prefix else None
+    answer = _pipeline(args).ask(args.question, k=args.k, where=where)
     if args.prompt:
         print(answer.prompt)
         return
@@ -72,6 +73,9 @@ def build_parser() -> argparse.ArgumentParser:
     ask = sub.add_parser("ask", parents=[common], help="retrieve context for a question")
     ask.add_argument("question")
     ask.add_argument("--prompt", action="store_true", help="print the full LLM prompt")
+    ask.add_argument(
+        "--doc-prefix", nargs="+", metavar="PREFIX", help="only search documents whose path starts with PREFIX"
+    )
     ask.set_defaults(func=cmd_ask)
 
     idx = sub.add_parser("index", parents=[common], help="chunk documents and save the index")

@@ -21,6 +21,17 @@ Question: {question}
 Answer:"""
 
 Generator = Callable[[str], str]
+ChunkFilter = Callable[[Chunk], bool]
+
+
+def doc_prefix(*prefixes: str) -> ChunkFilter:
+    """Filter that keeps chunks whose ``doc_id`` starts with any of ``prefixes``."""
+    return lambda chunk: chunk.doc_id.startswith(prefixes)
+
+
+def metadata_equals(**expected: object) -> ChunkFilter:
+    """Filter that keeps chunks whose metadata contains every ``key=value`` given."""
+    return lambda chunk: all(chunk.metadata.get(k) == v for k, v in expected.items())
 
 INDEX_FORMAT_VERSION = 1
 
@@ -68,8 +79,25 @@ class RAGPipeline:
         context = "\n\n".join(f"[{i}] ({h.chunk.doc_id}) {h.chunk.text}" for i, h in enumerate(hits, 1))
         return PROMPT_TEMPLATE.format(context=context or "(no context found)", question=question)
 
-    def ask(self, question: str, k: int = 4) -> Answer:
-        hits = self.retriever.search(question, k=k)
+    def search(
+        self,
+        question: str,
+        k: int = 4,
+        where: ChunkFilter | None = None,
+        overfetch: int = 5,
+    ) -> list[Hit]:
+        """Retrieve up to ``k`` hits, keeping only chunks for which ``where`` is true.
+
+        Filtering happens after retrieval, so ``overfetch * k`` candidates are
+        requested to leave enough hits once non-matching chunks are dropped.
+        """
+        if where is None:
+            return self.retriever.search(question, k=k)
+        hits = self.retriever.search(question, k=k * overfetch)
+        return [h for h in hits if where(h.chunk)][:k]
+
+    def ask(self, question: str, k: int = 4, where: ChunkFilter | None = None) -> Answer:
+        hits = self.search(question, k=k, where=where)
         prompt = self.build_prompt(question, hits)
         text = self.generator(prompt) if self.generator else None
         return Answer(question=question, prompt=prompt, hits=hits, text=text)

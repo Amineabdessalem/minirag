@@ -18,6 +18,8 @@ dependency, so every step is easy to read and test.
 - **Hybrid search** via Reciprocal Rank Fusion, with per-retriever weights.
 - **MMR re-ranking** (`MMRRetriever`) to drop near-duplicate chunks and keep
   the context diverse; available in the CLI as `--retriever hybrid-mmr`.
+- **Query-time filters**: restrict results by document path (`doc_prefix`)
+  or chunk metadata (`metadata_equals`), or pass any `Chunk -> bool` callable.
 - **Evaluation**: recall@k, MRR and nDCG@k over a labelled JSONL query set.
 - **Save and load** an index (chunks as JSONL plus settings) with
   `RAGPipeline.save` / `RAGPipeline.load` or `minirag index`.
@@ -72,6 +74,9 @@ minirag ask --docs examples/docs "what is the smallest deployable unit in kubern
 
 # Print the full prompt that would be sent to an LLM
 minirag ask --docs examples/docs --prompt "why do transformers need positional encodings"
+
+# Only search documents under a path prefix
+minirag ask --docs examples/docs --doc-prefix docker "containers"
 
 # Chunk once, save the index, and query it later
 minirag index --docs examples/docs --out .minirag
