@@ -75,3 +75,45 @@ def chunk_text(
             break
         start = max(end + 1 - overlap_words, start + 1)
     return chunks
+
+
+_HEADING_RE = re.compile(r"^(#{1,6})[ \t]+(.+?)[ \t#]*$", re.MULTILINE)
+
+
+def chunk_markdown(
+    text: str,
+    doc_id: str,
+    *,
+    max_words: int = 120,
+    overlap_words: int = 20,
+    metadata: dict | None = None,
+) -> list[Chunk]:
+    """Chunk Markdown section by section so no chunk spans two headings.
+
+    Each chunk gets ``metadata["heading"]``, the path of headings above it
+    (e.g. ``"Install > From source"``), and offsets into the original text.
+    Headings inside fenced code blocks are ignored.
+    """
+    fences = [(m.start(), m.end()) for m in re.finditer(r"^```.*?^```", text, re.MULTILINE | re.DOTALL)]
+    headings = [m for m in _HEADING_RE.finditer(text) if not any(s <= m.start() < e for s, e in fences)]
+
+    sections: list[tuple[int, int, str]] = []  # (body start, body end, heading path)
+    path: list[tuple[int, str]] = []
+    prev_end, prev_path = 0, ""
+    for m in headings:
+        sections.append((prev_end, m.start(), prev_path))
+        level = len(m.group(1))
+        path = [p for p in path if p[0] < level] + [(level, m.group(2).strip())]
+        prev_end, prev_path = m.end(), " > ".join(title for _, title in path)
+    sections.append((prev_end, len(text), prev_path))
+
+    chunks: list[Chunk] = []
+    for start, end, heading in sections:
+        meta = dict(metadata or {})
+        if heading:
+            meta["heading"] = heading
+        for c in chunk_text(text[start:end], doc_id, max_words=max_words,
+                            overlap_words=overlap_words, metadata=meta):
+            chunks.append(Chunk(id=f"{doc_id}#{len(chunks)}", doc_id=doc_id, text=c.text,
+                                start=start + c.start, end=start + c.end, metadata=c.metadata))
+    return chunks

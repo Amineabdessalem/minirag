@@ -1,6 +1,6 @@
 """minirag: a small, dependency-light retrieval-augmented generation toolkit."""
 
-from minirag.chunking import Chunk, chunk_text
+from minirag.chunking import Chunk, chunk_markdown, chunk_text
 from minirag.pipeline import Answer, RAGPipeline
 from minirag.retrievers import (
     BM25Retriever,
@@ -21,6 +21,7 @@ __all__ = [
     "RAGPipeline",
     "TfidfRetriever",
     "VectorRetriever",
+    "chunk_markdown",
     "chunk_text",
 ]
 __version__ = "0.1.0"

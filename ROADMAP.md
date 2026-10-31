@@ -3,7 +3,7 @@
 Planned work, roughly in order. Each item should land as its own tested commit.
 
 - [x] Persist and reload an index (`save`/`load`, chunks as JSONL + JSON metadata)
-- [ ] Markdown-aware chunking that keeps headings as chunk metadata
+- [x] Markdown-aware chunking that keeps headings as chunk metadata
 - [x] Maximal Marginal Relevance (MMR) re-ranking for more diverse context
 - [ ] Optional sentence-transformers embedder behind an extra (`pip install minirag[embeddings]`)
 - [ ] Larger benchmark: a public QA dataset subset with a reproducible eval script

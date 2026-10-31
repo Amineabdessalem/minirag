@@ -7,7 +7,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Callable, Iterable
 
-from minirag.chunking import Chunk, chunk_text
+from minirag.chunking import Chunk, chunk_markdown, chunk_text
 from minirag.retrievers import BM25Retriever, Hit, HybridRetriever, Retriever, VectorRetriever
 
 PROMPT_TEMPLATE = """Answer the question using only the context below. \
@@ -63,8 +63,10 @@ class RAGPipeline:
     def add_documents(self, docs: Iterable[tuple[str, str]]) -> int:
         """Chunk ``(doc_id, text)`` pairs and rebuild the index. Returns the chunk count."""
         for doc_id, text in docs:
+            # Markdown files are split per section and tagged with their heading path.
+            chunker = chunk_markdown if doc_id.lower().endswith((".md", ".markdown")) else chunk_text
             self.chunks.extend(
-                chunk_text(text, doc_id, max_words=self.max_words, overlap_words=self.overlap_words)
+                chunker(text, doc_id, max_words=self.max_words, overlap_words=self.overlap_words)
             )
         self.retriever.index(self.chunks)
         return len(self.chunks)
