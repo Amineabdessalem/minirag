@@ -9,4 +9,4 @@ Planned work, roughly in order. Each item should land as its own tested commit.
 - [ ] Larger benchmark: a public QA dataset subset with a reproducible eval script
 - [x] Query-time metadata filters (e.g. only search `doc_id` prefixes)
 - [ ] Simple HTTP API (FastAPI) exposing `/ask` and `/search`
-- [ ] Type-checking with mypy and linting with ruff in CI
+- [x] Type-checking with mypy and linting with ruff in CI

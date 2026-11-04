@@ -9,10 +9,10 @@ _TOKEN_RE = re.compile(r"[a-z0-9]+")
 # A deliberately small English stopword list: enough to keep scores from being
 # dominated by glue words, small enough that queries like "how to" still work.
 STOPWORDS = frozenset(
-    """
-    a an and are as at be but by for from has have i in is it its of on or
-    that the this to was were will with
-    """.split()
+    [
+        "a", "an", "and", "are", "as", "at", "be", "but", "by", "for", "from", "has", "have", "i", "in",
+        "is", "it", "its", "of", "on", "or", "that", "the", "this", "to", "was", "were", "will", "with",
+    ]
 )
 
 

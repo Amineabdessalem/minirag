@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import math
 from collections import Counter
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Protocol, Sequence
+from typing import Protocol
 
 import numpy as np
 
@@ -31,10 +32,10 @@ def _top_k(scores: np.ndarray, chunks: Sequence[Chunk], k: int) -> list[Hit]:
     if k <= 0 or len(chunks) == 0:
         return []
     k = min(k, len(chunks))
-    idx = np.argpartition(-scores, k - 1)[:k]
+    candidates = np.argpartition(-scores, k - 1)[:k]
     # Sort by score, breaking ties by corpus order so results are deterministic.
-    idx = sorted(idx, key=lambda i: (-scores[i], i))
-    return [Hit(chunks[i], float(scores[i])) for i in idx if scores[i] > 0]
+    order = sorted(candidates.tolist(), key=lambda i: (-scores[i], i))
+    return [Hit(chunks[i], float(scores[i])) for i in order if scores[i] > 0]
 
 
 class BM25Retriever:
@@ -91,7 +92,7 @@ class TfidfRetriever:
         self.vocab: dict[str, int] = {}
         self.idf = np.zeros(0)
 
-    def fit(self, texts: Sequence[str]) -> "TfidfRetriever":
+    def fit(self, texts: Sequence[str]) -> TfidfRetriever:
         docs = [set(tokenize(t)) for t in texts]
         self.vocab = {t: i for i, t in enumerate(sorted(set().union(*docs)))}
         df = np.zeros(len(self.vocab))
@@ -136,7 +137,7 @@ class VectorRetriever:
         self._matrix = self.embedder.embed(texts)
 
     def search(self, query: str, k: int = 5) -> list[Hit]:
-        if not self._chunks:
+        if not self._chunks or self.embedder is None:
             return []
         q = self.embedder.embed([query])[0]
         return _top_k(self._matrix @ q, self._chunks, k)
@@ -174,7 +175,7 @@ class HybridRetriever:
     def search(self, query: str, k: int = 5) -> list[Hit]:
         fused: dict[str, float] = {}
         by_id: dict[str, Chunk] = {}
-        for retriever, weight in zip(self.retrievers, self.weights):
+        for retriever, weight in zip(self.retrievers, self.weights, strict=True):
             for rank, hit in enumerate(retriever.search(query, max(k, self.candidates)), start=1):
                 fused[hit.chunk.id] = fused.get(hit.chunk.id, 0.0) + weight / (self.rrf_k + rank)
                 by_id[hit.chunk.id] = hit.chunk
@@ -216,7 +217,7 @@ class MMRRetriever:
 
     def search(self, query: str, k: int = 5) -> list[Hit]:
         pool = self.base.search(query, max(k, self.candidates))
-        if not pool:
+        if not pool or self.embedder is None:
             return []
         q = self.embedder.embed([query])[0]
         vecs = np.stack([self._vectors[h.chunk.id] for h in pool])

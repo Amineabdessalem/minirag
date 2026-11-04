@@ -38,7 +38,7 @@ def test_chunks_respect_max_words_and_offsets():
 def test_chunks_overlap():
     text = " ".join(f"w{i}." for i in range(100))
     chunks = chunk_text(text, "d", max_words=20, overlap_words=5)
-    for a, b in zip(chunks, chunks[1:]):
+    for a, b in zip(chunks, chunks[1:], strict=False):
         assert b.start < a.end
 
 

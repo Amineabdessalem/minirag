@@ -5,13 +5,14 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
 from minirag.evaluation import evaluate
 from minirag.pipeline import RAGPipeline, doc_prefix
-from minirag.retrievers import BM25Retriever, HybridRetriever, MMRRetriever, VectorRetriever
+from minirag.retrievers import BM25Retriever, HybridRetriever, MMRRetriever, Retriever, VectorRetriever
 
-RETRIEVERS = {
+RETRIEVERS: dict[str, Callable[[], Retriever]] = {
     "bm25": lambda: BM25Retriever(),
     "vector": lambda: VectorRetriever(),
     "hybrid": lambda: HybridRetriever([BM25Retriever(), VectorRetriever()]),
@@ -74,7 +75,8 @@ def build_parser() -> argparse.ArgumentParser:
     ask.add_argument("question")
     ask.add_argument("--prompt", action="store_true", help="print the full LLM prompt")
     ask.add_argument(
-        "--doc-prefix", nargs="+", metavar="PREFIX", help="only search documents whose path starts with PREFIX"
+        "--doc-prefix", nargs="+", metavar="PREFIX",
+        help="only search documents whose path starts with PREFIX",
     )
     ask.set_defaults(func=cmd_ask)
 

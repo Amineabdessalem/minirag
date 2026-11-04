@@ -31,6 +31,9 @@ dependency, so every step is easy to read and test.
 ```bash
 git clone https://github.com/Amineabdessalem/minirag
 cd minirag
+pytest -q                # tests
+ruff check src tests     # lint
+mypy                     # type-check
 pip install -e ".[dev]"
 ```
 

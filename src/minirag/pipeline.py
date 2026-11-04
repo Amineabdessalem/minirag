@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Callable, Iterable
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Callable, Iterable
 
 from minirag.chunking import Chunk, chunk_markdown, chunk_text
 from minirag.retrievers import BM25Retriever, Hit, HybridRetriever, Retriever, VectorRetriever
@@ -130,7 +130,7 @@ class RAGPipeline:
         path: str | Path,
         retriever: Retriever | None = None,
         generator: Generator | None = None,
-    ) -> "RAGPipeline":
+    ) -> RAGPipeline:
         """Rebuild a pipeline saved with :meth:`save`."""
         root = Path(path)
         meta = json.loads((root / "meta.json").read_text(encoding="utf-8"))
