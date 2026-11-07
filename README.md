@@ -87,7 +87,14 @@ minirag ask --index .minirag "how do containers get isolated"
 
 # Compare retrievers on a labelled query set
 minirag eval --docs examples/docs --queries examples/queries.jsonl --compare bm25 vector hybrid -k 3
+
+# Serve the index over HTTP (standard library only)
+minirag serve --index .minirag --port 8000
+curl -s localhost:8000/search -d '{"query": "container isolation", "k": 3, "doc_prefix": ["docker"]}'
 ```
+
+`POST /search` returns `{hits: [{id, doc_id, score, text, metadata}]}`; `POST /ask` also
+returns the assembled `prompt` (and `answer` when a generator is configured).
 
 On the bundled example set (8 documents, 17 queries):
 
@@ -110,7 +117,8 @@ src/minirag/
   retrievers.py   BM25, TF-IDF vector and hybrid (RRF) retrievers
   pipeline.py     ingest -> retrieve -> prompt -> generate
   evaluation.py   recall@k, MRR, nDCG@k
-  cli.py          `minirag ask` and `minirag eval`
+  server.py       JSON HTTP API (`/search`, `/ask`, `/healthz`)
+  cli.py          `minirag index`, `ask`, `eval` and `serve`
 ```
 
 ## Roadmap

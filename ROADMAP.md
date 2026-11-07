@@ -8,5 +8,5 @@ Planned work, roughly in order. Each item should land as its own tested commit.
 - [ ] Optional sentence-transformers embedder behind an extra (`pip install minirag[embeddings]`)
 - [ ] Larger benchmark: a public QA dataset subset with a reproducible eval script
 - [x] Query-time metadata filters (e.g. only search `doc_id` prefixes)
-- [ ] Simple HTTP API (FastAPI) exposing `/ask` and `/search`
+- [x] Simple HTTP API exposing `/ask` and `/search` (`minirag serve`, standard library only)
 - [x] Type-checking with mypy and linting with ruff in CI

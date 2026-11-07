@@ -59,6 +59,20 @@ def cmd_eval(args: argparse.Namespace) -> None:
         print(f"{name:<10} {report}")
 
 
+def cmd_serve(args: argparse.Namespace) -> None:
+    from minirag.server import serve
+
+    rag = _pipeline(args)
+    httpd = serve(rag, args.host, args.port)
+    print(f"serving {len(rag.chunks)} chunks on http://{args.host}:{httpd.server_address[1]}")
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        httpd.server_close()
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="minirag", description=__doc__)
     common = argparse.ArgumentParser(add_help=False)
@@ -88,6 +102,10 @@ def build_parser() -> argparse.ArgumentParser:
     ev.add_argument("--queries", required=True, help="JSONL with {query, relevant: [doc_id]}")
     ev.add_argument("--compare", nargs="+", choices=RETRIEVERS, help="evaluate several retrievers")
     ev.set_defaults(func=cmd_eval)
+    srv = sub.add_parser("serve", parents=[common], help="serve /search and /ask over HTTP")
+    srv.add_argument("--host", default="127.0.0.1")
+    srv.add_argument("--port", type=int, default=8000)
+    srv.set_defaults(func=cmd_serve)
     return p
 
 
