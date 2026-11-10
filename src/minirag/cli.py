@@ -20,6 +20,16 @@ RETRIEVERS: dict[str, Callable[[], Retriever]] = {
 }
 
 
+def _dense() -> Retriever:
+    from minirag.embeddings import SentenceTransformerEmbedder
+
+    # BM25 keeps exact keyword matches; the neural embedder adds paraphrase recall.
+    return HybridRetriever([BM25Retriever(), VectorRetriever(embedder=SentenceTransformerEmbedder())])
+
+
+RETRIEVERS["dense"] = _dense
+
+
 def _pipeline(args: argparse.Namespace) -> RAGPipeline:
     if getattr(args, "index", None):
         return RAGPipeline.load(args.index, retriever=RETRIEVERS[args.retriever]())

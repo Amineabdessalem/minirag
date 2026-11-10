@@ -14,6 +14,7 @@ dependencies = ["numpy>=1.24"]
 
 [project.optional-dependencies]
 dev = ["pytest>=7", "ruff>=0.6", "mypy>=1.10"]
+embeddings = ["sentence-transformers>=3"]
 
 [project.scripts]
 minirag = "minirag.cli:main"
@@ -36,3 +37,7 @@ select = ["E", "F", "W", "I", "UP", "B", "SIM"]
 python_version = "3.10"
 files = ["src"]
 warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = ["sentence_transformers"]
+ignore_missing_imports = true

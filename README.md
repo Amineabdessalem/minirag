@@ -31,11 +31,21 @@ dependency, so every step is easy to read and test.
 ```bash
 git clone https://github.com/Amineabdessalem/minirag
 cd minirag
+pip install -e ".[dev]"
 pytest -q                # tests
 ruff check src tests     # lint
 mypy                     # type-check
-pip install -e ".[dev]"
 ```
+
+For neural embeddings, install the optional extra and use `--retriever dense`
+(BM25 fused with a sentence-transformers model, `all-MiniLM-L6-v2` by default):
+
+```bash
+pip install -e ".[embeddings]"
+minirag ask --docs examples/docs --retriever dense "how are containers isolated"
+```
+
+In Python: `VectorRetriever(embedder=SentenceTransformerEmbedder("BAAI/bge-small-en-v1.5"))`.
 
 ## Quick start
 
@@ -117,6 +127,7 @@ src/minirag/
   retrievers.py   BM25, TF-IDF vector and hybrid (RRF) retrievers
   pipeline.py     ingest -> retrieve -> prompt -> generate
   evaluation.py   recall@k, MRR, nDCG@k
+  embeddings.py   optional sentence-transformers embedder
   server.py       JSON HTTP API (`/search`, `/ask`, `/healthz`)
   cli.py          `minirag index`, `ask`, `eval` and `serve`
 ```
